@@ -42,3 +42,38 @@ KB的数据挖掘规则异化为两个方面：
 1. 用于在正KB中模拟反例的方法(the Partial Completeness Assumption)
 2. 一个高效的规则挖掘算法
 3. 一个名为AMIE的系统，可以在几分钟内挖掘数百万个事实的规则，而无需参数调整或专家输入。
+
+# 术语
+RDF: 所有的事实以<x,r,y>形式存储。也等价于r(x,y)
+A-Box:包含实例数据
+T-Box:定义类、域、谓词范围和类层次结构的事实的子集。
+$\mathcal{K}:KB,
+\mathcal{R}=\pi_{relation}(\mathcal{K}),
+\mathcal{E}=\pi_{subject}(\mathcal{K})\cup \pi_{object}(\mathcal{K})$
+
+# 挖掘模型
+- Horn rule: $\overrightarrow{B}\Longrightarrow r(x,y)$
+- support:规则的支持(support)量化了正确预测的数量,
+$supp(\overrightarrow{B}\Longrightarrow r(x,y)):=\#(x,y):\exist z_1,...,z_m:\overrightarrow{B}\wedge r(x,y)$
+也即x,y与Horn规则形成闭合规则。
+- head coverage:
+  $hc(\overrightarrow{B}\Longrightarrow r(x,y)):=\frac{supp(\overrightarrow{B}\Longrightarrow r(x,y))}{\#(x\prime, y\prime):r(x\prime,y\prime)}$,分母是r的关系数。
+- Standard Confidence:
+  $conf(\overrightarrow{B}\Longrightarrow r(x,y)):=\frac{supp(\overrightarrow{B}\Longrightarrow r(x,y))}{\#(x,y):\exist z_1, ..., z_m:\overrightarrow{B}}$
+- Positive-Only Learning:
+$Score = log(P)-log(\frac{R+1}{Rsize+2})-\frac{L}{P}$
+- PCA Confidence:
+  $pcaconf(\overrightarrow{B}\Longrightarrow r(x,y)):=\frac{supp(\overrightarrow{B}\Longrightarrow r(x,y))}{\#(x,y):\exist z_1, ..., z_m,y\prime:\overrightarrow{B}\wedge r(x,y\prime)}$
+- Algorithm:
+```py
+def RuleMining(K: KB):
+   q = <[]>
+   while not q.empty():
+      r = q.pop()
+      if r.closed() and not r.pruned(): # 如果规则是闭合的，并且没有被剪枝过
+         Output(r)
+      for o in operators:
+         for r' in o(r):
+            if not r'.pruned():
+               q.push(r')
+```

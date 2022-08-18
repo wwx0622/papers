@@ -31,7 +31,7 @@ $H^1$：初始矩阵，通过高斯分布随机生成
 如果有L层WGCN,则$H^{L+1}$为最终嵌入。
 KB中有T类关系，E个边。节点间的强弱关系由关系类型决定，其参数为$\{\alpha_{t},1\,\leq\,{{t}}\leq\ T\}$，这个参数是自动学习的。
 
-![SACN过程图](image/SACN%2001.png "SACN过程图")
+![SACN过程图](../../image/SACN%2001.png "SACN过程图")
 WGCN的针对节点$v_i$计算方法：$h_{i}^{l+1}=\sigma\left(\sum_{j\in\bf{N}_{i}}\alpha_{t}^{l}g(h_{i}^{l},h_{j}^{l})\right)$,其中$g(x)$表示如何聚合邻居信息的函数。实际工作中使用的$g(h_{i}^{l},h_{j}^{l})\,=\,h_{j}^{l}W^{l},$其中${W}^{l}~\in \mathrm{R}^{{F ^ l}\times F^{l+1}}$。因为这样的g没有应用到节点$v_i$本身包含的信息$h_i^l$，因此修改传播过程为:$$h_{i}^{l+1}=\sigma\left(\sum_{j \in \mathbf{N}_{\mathbf{i}}} \alpha_{t}^{l} h_{j}^{l} W^{l}+h_{i}^{l} W^{l}\right)$$上述过程可以组织为矩阵乘法，通过邻接矩阵同时计算所有节点的嵌入。对于每种关系（边）类型，邻接矩阵$A_t$是一个二元矩阵，如果存在连接$v_i$和$v_j$的边，则其$A_{ij}$为1，否则为0。最后的邻接矩阵如下所示：$$A^{l}=\sum_{t=1}^{T}(\alpha_{t}^{l}A_{t})+I,$$单位阵对应本节点的信息。最终可以转化为矩阵运算：$$H^{l+1}=\sigma(A^{l}H^{l}W^{l}).$$
 ## Node Attributes
 节点属性通常也以(entity, relation, attribute)的形式给出。单纯的将属性也视为边会有两个问题：
@@ -58,6 +58,114 @@ m_{c}\left(e_{s}, e_{r}, n\right)=& \sum_{\tau=0}^{K-1} \omega_{c}(\tau, 0) \hat
 
 总之，提出的SACN模型利用了知识图节点连通性、节点属性和关系类型。WGCN中的可学习权重有助于从相邻图节点收集自适应数量的信息。实体属性作为网络中的附加节点添加，并易于集成到WGCN中。Conv-TransE保持实体和关系之间的平移特性，以学习用于链接预测的节点嵌入。
 其次，SACN在使用或不使用节点属性的情况下都比ConvE有显著的改进。
+
+# 核心代码
+```py
+# 图卷积
+class GraphConvolution(torch.nn.Module):
+    def __init__(self, in_features, out_features, num_relations, bias=True):
+        super(GraphConvolution, self).__init__()
+        self.in_features = in_features
+        self.out_features = out_features
+        self.weight = Parameter(torch.FloatTensor(in_features, out_features))
+        self.num_relations = num_relations
+        self.alpha = torch.nn.Embedding(num_relations+1, 1, padding_idx=0)
+        if bias:
+            self.bias = Parameter(torch.FloatTensor(out_features))
+        else:
+            self.register_parameter('bias', None)
+        self.reset_parameters()
+
+    def forward(self, input, adj):
+
+        alp = self.alpha(adj[1]).t()[0]
+        # e1, rel, e2 -> 邻接矩阵，对应A(e1,e2)=rel,其他值为0
+        # 对应文中的A
+        A = torch.sparse_coo_tensor(adj[0], alp, torch.Size([adj[2],adj[2]]), requires_grad = True)
+        A = A + A.transpose(0, 1) # 对应文中的A
+        support = torch.mm(input, self.weight) # 对应文中的H，W
+        output = torch.sparse.mm(A, support) # AHW
+
+        if self.bias is not None:
+            return output + self.bias
+        else:
+            return output
+
+    def __repr__(self):
+        return self.__class__.__name__ + ' (' \
+               + str(self.in_features) + ' -> ' \
+               + str(self.out_features) + ')'
+
+class SACN:
+    def __init__(self, num_entities, num_relations):
+        super(SACN, self).__init__()
+
+        self.emb_e = torch.nn.Embedding(num_entities, Config.init_emb_size, padding_idx=0)
+        self.gc1 = GraphConvolution(Config.init_emb_size, Config.gc1_emb_size, num_relations)
+        self.gc2 = GraphConvolution(Config.gc1_emb_size, Config.embedding_dim, num_relations)
+        self.emb_rel = torch.nn.Embedding(num_relations, Config.embedding_dim, padding_idx=0)
+        self.inp_drop = torch.nn.Dropout(Config.input_dropout)
+        self.hidden_drop = torch.nn.Dropout(Config.dropout_rate)
+        self.feature_map_drop = torch.nn.Dropout(Config.dropout_rate)
+        self.loss = torch.nn.BCELoss()
+        self.conv1 =  nn.Conv1d(2, Config.channels, Config.kernel_size, stride=1, padding= int(math.floor(Config.kernel_size/2))) # kernel size is odd, then padding = math.floor(kernel_size/2)
+        self.bn0 = torch.nn.BatchNorm1d(2)
+        self.bn1 = torch.nn.BatchNorm1d(Config.channels)
+        self.bn2 = torch.nn.BatchNorm1d(Config.embedding_dim)
+        self.register_parameter('b', Parameter(torch.zeros(num_entities)))
+        self.fc = torch.nn.Linear(Config.embedding_dim*Config.channels,Config.embedding_dim)
+        self.bn3 = torch.nn.BatchNorm1d(Config.gc1_emb_size)
+        self.bn4 = torch.nn.BatchNorm1d(Config.embedding_dim)
+        self.bn_init = torch.nn.BatchNorm1d(Config.init_emb_size)
+
+        print(num_entities, num_relations)
+
+    def farword(self, e1, rel, X, A):
+        # e1, relation, 全1向量长N, A=[[e1, e2_multi], relation, N]
+        # X: N -> N*init_embedding_size:100
+        emb_initial = self.emb_e(X)
+        # 图卷积：
+        x = self.gc1(emb_initial, A) # x = AHW
+        x = self.bn3(x)
+        x = torch.tanh(x) # H' = s(AHW)
+        x = F.dropout(x, Config.dropout_rate, training=self.training)
+
+        x = self.bn4(self.gc2(x, A))
+        e1_embedded_all = F.tanh(x)
+        e1_embedded_all = F.dropout(e1_embedded_all, Config.dropout_rate, training=self.training)
+        e1_embedded = e1_embedded_all[e1] # 实体嵌入
+        rel_embedded = self.emb_rel(rel) # 关系嵌入
+        # M(Cs, Cr)
+        stacked_inputs = torch.cat([e1_embedded, rel_embedded], 1) # cat(es, er))
+        stacked_inputs = self.bn0(stacked_inputs)
+        x= self.inp_drop(stacked_inputs)
+        x= self.conv1(x)
+        x= self.bn1(x)
+        x= F.relu(x)
+        x = self.feature_map_drop(x)
+        x = x.view(Config.batch_size, -1) # vec(x), batch*length
+        x = self.fc(x)
+        x = self.hidden_drop(x)
+        x = self.bn2(x)
+        x = F.relu(x)
+        x = torch.mm(x, e1_embedded_all.transpose(1, 0)) # 评分函数
+        pred = torch.sigmoid(x)
+```
+# 总结
+优点：
+1. 针对不同关系设置了不同的**可学习的权重**
+2. 通过**矩阵存储图结构**，提高运算速度
+
+缺点：
+1. 大型知识图，节点数和关系数很多，占用显存太大
+2. 属性视作单独的节点，增加了节点的数量，导致矩阵的稀疏
+3. 没有考虑实体的多重指代等
+4. 关系通过embedding进行嵌入，无后续处理
+
+改进思路：
+1. 通过**自注意力机制**找到关系的权重关系
+2. 属性可以作为节点的{key:value}对的集合，将所有key-value对进行嵌入，在图卷积时，除了要考虑节点，还要考虑属性。也即$h_i' = (\sum_{j=1}^{N_i}g(h_i,h_j))+(\sum_{j=1}^{A_i}f(h_i,attr_j))$
+3. 节点有了天然的去重措施，也即比较节点的name和attribute
 
 # 其他知识补充
 知识图嵌入指标：HITS@1, HITS@3, HITS@10, MRR, MR

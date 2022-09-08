@@ -47,8 +47,8 @@ $\circ$表示对应元素乘。此外还需要将$r$单位化
 关系对称 &\Longleftrightarrow& \mathbf{r_i}\circ \mathbf{r_j}  = \mathbf{\pm1}\\
 关系反对称&\Longleftrightarrow& r_i = \overline{r_j}\\
 关系合成&\Longleftrightarrow&r_k=r_i\circ r_j
-\end{align}
-$$
+\end{align}$$
+
 ### HakE^[http://arxiv.org/abs/1911.09419]
 将知识图建模在极坐标圆上，需要两个量$(r;\theta)$,
 - 令$h_m, r_m, t_m$表示模长，有度量：

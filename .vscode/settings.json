@@ -19,6 +19,7 @@
         "HRAN",
         "KGQA",
         "logit",
+        "mathscr",
         "MLMLM",
         "Mult",
         "PKGC",
@@ -26,7 +27,9 @@
         "SACN",
         "SPARQL",
         "TATEC",
-        "WGCN"
+        "TDNS",
+        "WGCN",
+        "YAGO"
       ],
       "livePreview.defaultPreviewPath": "/test.html",
 }

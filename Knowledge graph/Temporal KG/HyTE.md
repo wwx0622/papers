@@ -82,3 +82,6 @@ $\color{red}{时间戳不同的三元组}$
   1. Entity Prediction
   2. Relation Prediction
   3. Temporal Scope Prediction
+
+# 总结
+可借鉴：将KG元素进行超平面投影

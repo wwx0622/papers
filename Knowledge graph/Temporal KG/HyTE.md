@@ -1,6 +1,5 @@
 # title
-[HyTE: Hyperplane-based Temporally aware Knowledge Graph
-Embedding](https://aclanthology.org/D18-1225/)
+[HyTE: Hyperplane-based Temporally aware Knowledge Graph Embedding](https://aclanthology.org/D18-1225/)
 《HyTE: 基于超平面的时间感知知识图嵌入》
 [Github项目地址](https://github.com/malllabiisc/HyTE)
 

@@ -22,7 +22,7 @@
 
 [项目地址](https://github.com/dagservice/da-gpn)
 # Method
-![整体架构](image/DAttention%2001.png "整体架构")
+![整体架构](../../image/DAttention%2001.png "整体架构")
 三个重要组件：pre-trained language model, graph model, classification
 - 预训练语言模型:$X \rightarrow H^0$，其中$X=\{x_1,...,xn\}, H^0=\{h_1, ... ,h_n\}$，这其中的$x_0和x_n$分别是开始和结束标记[CLS],[Sep]。编码后的结果送入后续处理。
 - 图模型：本工作的核心部分，其目的是学习与目标实体对相关的潜在图。需要从不同的视图中寻找同时被列为重要的节点。
@@ -36,7 +36,7 @@
 $A_{ij}^k = \frac{exp(ReLu(W_e*|Wsh^0_i-W_oh_j^0|))}{\sum_{j=1}^{n}exp(ReLu(W_e*|Wsh^0_i-W_oh_j^0|))}$，
 其中$W_e\in R^{1*d}, W_s\in R^{d*d}, W_o\in R^{d*d}$。如此学习t次，得到$M^0 = \{A^1, A^2, .., A^t\}$。
 ## Graph learning
-![图学习](image/DAttention%2002.png "图学习架构")
+![图学习](../../image/DAttention%2002.png "图学习架构")
 第一步：密集连接：$h_i^{l}=ReLu(\sum_{j=1}^n A_{ij}W^{l}g_j^l+b^l)$
 $W^l\in R^{d_h*d_l}，d_h=d/l,d_l=d+d_h*(l-1)$
 $b^l是偏置值$
@@ -53,7 +53,7 @@ $I_{k}=\operatorname{top}-\operatorname{rank}\left(\mathbf{s}_{k},[r n]\right),�
 $H^{G}=W_{\text {comp }}\left[\hat{H}_{1}^{M}, \ldots, \hat{H}_{t}^{M}\right]+b_{\text {comp }}$
 其融合从每个视图学习的表示。
 ## Graph refining
-![图细化](image/DAttention%2003.png "图细化")
+![图细化](../../image/DAttention%2003.png "图细化")
 **Dual-channel self-attention**：自我注意机制使人们能够更加关注重要信息，因此可以通过加权查询Q和密钥K之间的对齐度来充当过滤器。因此，获得适当的Q和K是很有价值的，这在现有研究中通常被忽略。在这里，我们设计了一个双通道自关注来优化查询和密钥的表达能力。具体来说，两个查询和密钥对分别通过两个通道学习，然后合成为一个新的查询-密钥对，计算如下:
 $\left[\begin{array}{l}\hat{Q} \\ \hat{K}\end{array}\right]=\left(1-\left[\begin{array}{l}\lambda_{Q} \\ \lambda_{K}\end{array}\right]\right)\left[\begin{array}{l}W_{Q_{1}} Q_{1} \\ W_{K_{1}} K_{1}\end{array}\right]+\left[\begin{array}{l}\lambda_{Q} \\ \lambda_{K}\end{array}\right]\left[\begin{array}{l}W_{Q_{2}} Q_{2} \\ W_{K_{2}} K_{2}\end{array}\right]$
 其中$Q_i=K_i=H^G$,

@@ -1,6 +1,5 @@
 # title
-[Latent graph learning with dual-channel attention for relation
-extraction](https://www.sciencedirect.com/science/article/pii/S0950705122007389)
+[Latent graph learning with dual-channel attention for relation extraction](https://www.sciencedirect.com/science/article/pii/S0950705122007389)
 # Abstract
 作为信息检索的一个组成部分，关系抽取旨在预测文本中两个给定实体之间的关系类型。当遇到包含许多与任务无关的标记的长文本时，此任务将变得具有挑战性。最近解决这个问题的尝试已经求助于学习token之间的相关性。然而，如何获得合适的图来更好地表示相关性仍然是一个悬而未决的问题，而现有的方法还有改进的余地。在本文中，我们提出了一种新的潜在图学习方法，以增强感兴趣实体的上下文信息表达能力。特别是，我们设计了一种用于**多视图图学习的双通道注意机制**，并将所学习的多视图汇集在一起，以筛选潜在图的无关tokens。该过程可以重复多次以细化潜在结构。我们表明，与强基线模型和先前的多视图图学习方法相比，我们的方法在多个基准数据集上实现了优异的性能。
 # Conclusion

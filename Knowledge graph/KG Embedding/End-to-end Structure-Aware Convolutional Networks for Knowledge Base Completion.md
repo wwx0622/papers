@@ -60,6 +60,7 @@ m_{c}\left(e_{s}, e_{r}, n\right)=& \sum_{\tau=0}^{K-1} \omega_{c}(\tau, 0) \hat
 其次，SACN在使用或不使用节点属性的情况下都比ConvE有显著的改进。
 
 # 核心代码
+
 ```py
 # 图卷积
 class GraphConvolution(torch.nn.Module):
